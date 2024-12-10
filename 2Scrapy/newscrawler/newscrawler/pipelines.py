@@ -8,7 +8,7 @@
 from scrapy.exceptions import DropItem
 
 
-class TextPipeline(object):
+class NewscrawlerPipeline(object):
 
     def process_item(self, item, spider):
         if item['title']:

@@ -1,26 +1,28 @@
 import scrapy
 from scrapy import Request
 
-
 class LemondeSpider(scrapy.Spider):
     name = "lemondev3"
-    allowed_domains = ["www.lemonde.fr"]
-    start_urls = ['https://www.lemonde.fr']
+    allowed_domains = ['lemonde.fr']
+    start_urls = ['https://www.lemonde.fr/international/']
 
     def parse(self, response, **kwargs):
-        all_links = {
-            name: response.urljoin(url) for name, url in zip(
-                response.css("#nav-markup .Nav__item")[3].css("a::text").extract(),
-                response.css("#nav-markup .Nav__item")[3].css("a::attr(href)").extract())
-        }
-        for link in all_links.values():
-            yield Request(link, callback=self.parse_category)
-
-    def parse_category(self, response):
-        for article in response.css(".river")[0].css(".teaser"):
+        # Parcours tous les éléments de navigation pour extraire les liens
+       articles = response.css(".river .teaser")
+       
+       if not articles:
+            self.logger.warning("Aucun article trouvé sur cette page : %s", response.url)
+        
+       for article in articles:
             title = self.clean_spaces(article.css("h3::text").extract_first())
             image = article.css("img::attr(data-src)").extract_first()
             description = article.css("p::text").extract_first()
+
+            if title:
+                self.logger.info(f"Titre extrait : {title}")
+            else:
+                self.logger.warning(f"Aucun titre trouvé pour l'article sur {response.url}")
+
             yield {
                 "title": title,
                 "image": image,
@@ -28,5 +30,7 @@ class LemondeSpider(scrapy.Spider):
             }
 
     def clean_spaces(self, string):
+        """Nettoie les espaces supplémentaires dans une chaîne."""
         if string:
             return " ".join(string.split())
+        return ""
